@@ -6,7 +6,7 @@ const path = require("path");
 const app = express();
 const port = 3000;
 
-app.get("/img/:imageName(*)", async (req, res) => {
+app.get("/pics/:imageName(*)", async (req, res) => {
   const imageName = req.params.imageName;
 
   const filePathCache = path.join(__dirname, "../.cache/", imageName.replaceAll('/', '-'));

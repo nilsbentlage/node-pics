@@ -1,10 +1,13 @@
 {
-  "name": "image-server",
+  "name": "node-pics",
   "version": "1.0.0",
-  "description": "Get Image Versions ins all sizes, caching included",
+  "description": "Pure Image Compression|Conversion|Caching Server",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "clear": "node src/clearCache.js"
   },
   "author": "Nils Bentlage",
   "license": "ISC",
