@@ -21,7 +21,7 @@ This node server allows to serve image files and resize them on the fly when req
 | `filename` | `string`         | **Required**. The path of the requested File, relative to /images, without the file extension |
 | `width`    | `number`         | The new width of the requested Image                                                          |
 | `height`   | `number`         | The new height of the requested Image                                                         |
-| `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image                                      |
+| `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image (WIP)                                |
 
 ## Installation
 
