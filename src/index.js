@@ -1,54 +1,53 @@
-const express = require("express");
-const sharp = require("sharp");
-const path = require("path");
-const fs = require("fs");
+import express from "express";
+import sharp from "sharp";
+import { join } from "path";
+import { existsSync, readdirSync } from "fs";
+import log from "./util.mjs";
 
 const app = express();
 const port = 3000;
 
-app.get("/pics/:imageName(*)", async (req, res) => {
+app.get("/favicon.ico", (req, res) => res.status(204));
+
+app.get("/:imageName(*)", async (req, res) => {
   const imageName = req.params.imageName;
   const fileExtension = imageName.split(".")[imageName.split(".").length - 1];
 
-  const filePathCache = path.join(
-    __dirname,
-    "../.cache/",
-    imageName.replaceAll("/", "-")
-  );
-  const filePathSource = path.join(__dirname, "../images/", imageName);
+  const filePathSource = join("images/", imageName);
+  const filePathCache = join(".cache/", imageName.replaceAll("/", "-"));
 
-  const fileInSource = fs.existsSync(filePathSource);
-  const fileInCache = fs.existsSync(filePathCache);
+  const fileInSource = existsSync(filePathSource);
+  const fileInCache = existsSync(filePathCache);
 
-  const imageRegex = /_(\d+)x(\d+)\.(\w+)/;
-  const [, imageWidth, imageHeight] = imageName.match(imageRegex) || [
-    null,
-    null,
-    null,
-  ];
+  const sizeRegex = /\d{1,4}x\d{1,4}/;
+  const sizeString = imageName.match(sizeRegex);
+  const [imageWidth, imageHeight] =
+    (sizeString && sizeString[0].split("x")) || [];
 
-  if (!fileInCache && !fileInSource) {
-    console.time("Converting " + imageName + ": ");
+  const begin = new Date();
+
+  const isAvailable = !fileInCache && !fileInSource;
+
+  if (isAvailable) {
     const basename = imageName
       .replace(/_(\d+)x(\d+)/, "")
       .replace(/\.(\w+)/, "");
 
-    const sourceImages = fs.readdirSync(path.join(__dirname, "../images"));
+    const sourceImagePath = join("images");
+    const sourceImages = readdirSync(sourceImagePath);
     const sourceImage = sourceImages.find((image) => {
-      return image.includes(basename);
+      return image.startsWith(basename);
     });
 
     if (!sourceImage) {
-      res.send(imageName + " was not found!");
-      console.log(imageName + " was not found!");
+      res.send("Source Image: " + imageName + " was not found!");
+      log("Source Image: " + imageName + " was not found!");
       return;
     }
 
-    const sourceFileExtension = sourceImage.split(".")[1];
-    const sourceImagePath = path.join(__dirname, "../images");
-
     try {
-      const image = sharp(path.join(sourceImagePath, sourceImage));
+      const sourceFileExtension = sourceImage.split(".")[1];
+      const image = sharp(join(sourceImagePath, sourceImage));
 
       if (imageWidth && imageHeight) {
         image.resize(parseInt(imageWidth), parseInt(imageHeight));
@@ -57,18 +56,23 @@ app.get("/pics/:imageName(*)", async (req, res) => {
         image.toFormat("." + fileExtension === "jpg" ? "jpeg" : fileExtension);
       }
       image.toFile(filePathCache).then(() => {
-        res.sendFile(filePathCache);
+        res.sendFile(filePathCache, { root: "." });
       });
-      console.timeEnd("Converting " + imageName + ": ");
     } catch (err) {
-      console.log("Could not create Image");
-      res("Could not create Image");
+      log("Could not create Image: " + err.message);
+      res("Could not create Image: " + err.message);
     }
   } else {
-    res.sendFile(fileInCache ? filePathCache : filePathSource);
+    res.sendFile(fileInCache ? filePathCache : filePathSource, { root: "." });
   }
+
+  log(
+    `Handled Request: ${imageName} in ${new Date() - begin}ms ${
+      isAvailable ? "(incl. conversion to " + fileExtension + ")" : ""
+    }`
+  );
 });
 
 app.listen(port, () => {
-  console.log(`Image server listening on port ${port}`);
+  log(`P.I.C.S listening on port ${port}`);
 });

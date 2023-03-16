@@ -1,5 +1,5 @@
 node_modules
 
-*.png
-*.jpg
-*.jpeg
+images/*
+.cache/*
+.vscode
