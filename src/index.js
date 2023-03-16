@@ -1,22 +1,27 @@
 const express = require("express");
 const sharp = require("sharp");
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const port = 3000;
 
 app.get("/pics/:imageName(*)", async (req, res) => {
   const imageName = req.params.imageName;
+  const fileExtension = imageName.split(".")[imageName.split(".").length - 1];
 
-  const filePathCache = path.join(__dirname, "../.cache/", imageName.replaceAll('/', '-'));
+  const filePathCache = path.join(
+    __dirname,
+    "../.cache/",
+    imageName.replaceAll("/", "-")
+  );
   const filePathSource = path.join(__dirname, "../images/", imageName);
-  
+
   const fileInSource = fs.existsSync(filePathSource);
   const fileInCache = fs.existsSync(filePathCache);
-  
-  const sizeRegex = /_(\d+)x(\d+)(?=.[a-z]*)/;
-  const [string, imageWidth, imageHeight] = imageName.match(sizeRegex) || [
+
+  const imageRegex = /_(\d+)x(\d+)\.(\w+)/;
+  const [, imageWidth, imageHeight] = imageName.match(imageRegex) || [
     null,
     null,
     null,
@@ -24,21 +29,44 @@ app.get("/pics/:imageName(*)", async (req, res) => {
 
   if (!fileInCache && !fileInSource) {
     console.time("Converting " + imageName + ": ");
+    const basename = imageName
+      .replace(/_(\d+)x(\d+)/, "")
+      .replace(/\.(\w+)/, "");
 
-    const sourceImage = path.join(
-      __dirname,
-      "../images/",
-      imageName.replace(/_(\d+)x(\d+)/, "")
-    );
+    const sourceImages = fs.readdirSync(path.join(__dirname, "../images"));
+    const sourceImage = sourceImages.find((image) => {
+      return image.includes(basename);
+    });
 
-    await sharp(sourceImage)
-      .resize(parseInt(imageWidth), parseInt(imageHeight))
-      .toFile(filePathCache);
+    if (!sourceImage) {
+      res.send(imageName + " was not found!");
+      console.log(imageName + " was not found!");
+      return;
+    }
 
-    console.timeEnd("Converting " + imageName + ": ");
+    const sourceFileExtension = sourceImage.split(".")[1];
+    const sourceImagePath = path.join(__dirname, "../images");
+
+    try {
+      const image = sharp(path.join(sourceImagePath, sourceImage));
+
+      if (imageWidth && imageHeight) {
+        image.resize(parseInt(imageWidth), parseInt(imageHeight));
+      }
+      if (fileExtension !== sourceFileExtension) {
+        image.toFormat("." + fileExtension === "jpg" ? "jpeg" : fileExtension);
+      }
+      image.toFile(filePathCache).then(() => {
+        res.sendFile(filePathCache);
+      });
+      console.timeEnd("Converting " + imageName + ": ");
+    } catch (err) {
+      console.log("Could not create Image");
+      res("Could not create Image");
+    }
+  } else {
+    res.sendFile(fileInCache ? filePathCache : filePathSource);
   }
-
-  res.sendFile(!string ? filePathSource : filePathCache);
 });
 
 app.listen(port, () => {

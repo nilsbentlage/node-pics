@@ -1,6 +1,6 @@
 # Pure Image Compression|Conversion|Caching Server
 
-This node server allows to serve image files and resize them on the fly when requested. To fetch an image in a certain resolution and format just add '\_[width]x[height].[format] to the requested filename.
+This node server allows to serve image files and resize them on the fly when requested. To fetch an image in a certain resolution and format just add ```_[width]x[height]``` to the requested filename and add the file extension you need.
 
 ## Features
 
