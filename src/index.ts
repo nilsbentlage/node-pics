@@ -2,7 +2,7 @@ import express from "express";
 import sharp from "sharp";
 import { join } from "path";
 import { existsSync, readdirSync } from "fs";
-import log from "./util.mjs";
+import log from "./util.js";
 
 const app = express();
 const port = 3000;
