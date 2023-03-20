@@ -53,21 +53,21 @@ app.get("/:imageName(*)", async (req, res) => {
         image.resize(parseInt(imageWidth), parseInt(imageHeight));
       }
       if (fileExtension !== sourceFileExtension) {
-        image.toFormat("." + fileExtension === "jpg" ? "jpeg" : fileExtension);
+        image.toFormat(fileExtension === "jpg" ? "jpeg" : fileExtension as any);
       }
       image.toFile(filePathCache).then(() => {
         res.sendFile(filePathCache, { root: "." });
       });
-    } catch (err) {
+    } catch (err: any) {
       log("Could not create Image: " + err.message);
-      res("Could not create Image: " + err.message);
+      res.send("Could not create Image: " + err.message);
     }
   } else {
     res.sendFile(fileInCache ? filePathCache : filePathSource, { root: "." });
   }
 
   log(
-    `Handled Request: ${imageName} in ${new Date() - begin}ms ${
+    `Handled Request: ${imageName} in ${new Date().getMilliseconds() - begin.getMilliseconds()}ms ${
       isAvailable ? "(incl. conversion to " + fileExtension + ")" : ""
     }`
   );

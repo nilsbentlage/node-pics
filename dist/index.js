@@ -44,7 +44,7 @@ app.get("/:imageName(*)", async (req, res) => {
                 image.resize(parseInt(imageWidth), parseInt(imageHeight));
             }
             if (fileExtension !== sourceFileExtension) {
-                image.toFormat("." + fileExtension === "jpg" ? "jpeg" : fileExtension);
+                image.toFormat(fileExtension === "jpg" ? "jpeg" : fileExtension);
             }
             image.toFile(filePathCache).then(() => {
                 res.sendFile(filePathCache, { root: "." });
@@ -52,13 +52,13 @@ app.get("/:imageName(*)", async (req, res) => {
         }
         catch (err) {
             (0, util_js_1.default)("Could not create Image: " + err.message);
-            res("Could not create Image: " + err.message);
+            res.send("Could not create Image: " + err.message);
         }
     }
     else {
         res.sendFile(fileInCache ? filePathCache : filePathSource, { root: "." });
     }
-    (0, util_js_1.default)(`Handled Request: ${imageName} in ${new Date() - begin}ms ${isAvailable ? "(incl. conversion to " + fileExtension + ")" : ""}`);
+    (0, util_js_1.default)(`Handled Request: ${imageName} in ${new Date().getMilliseconds() - begin.getMilliseconds()}ms ${isAvailable ? "(incl. conversion to " + fileExtension + ")" : ""}`);
 });
 app.listen(port, () => {
     (0, util_js_1.default)(`P.I.C.S listening on port ${port}`);
