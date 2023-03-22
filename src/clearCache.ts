@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import log from "./util.mjs";
+import log from "./util";
 
 const directory = ".cache";
 
