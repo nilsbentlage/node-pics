@@ -7,6 +7,8 @@ import sharp from "sharp";
 const imageFolder = "images";
 const cacheFolder = ".cache";
 
+export type FillMode = "cover" | "contain" | "fill" | "inside" | "outside";
+
 const picsRegex =
   /(?<basename>[A-z/\-][^_]*)(?:_)?(?<dimensions>\d{1,4}x\d{1,4})?(?:\.)(?<format>[a-z]{1,4})/;
 
@@ -17,8 +19,14 @@ export class ImageRequest {
   dimensions: string;
   format!: string;
   files!: { original: any; cache: any; source: any };
+  fillMode: FillMode = "cover";
 
-  constructor(requested: string) {
+  constructor(requested: string, fillMode: FillMode) {
+    if (fillMode) {
+      this.fillMode = fillMode;
+      fs.mkdirSync(path.join(cacheFolder, fillMode), { recursive: true });
+      requested = path.join(fillMode, requested);
+    }
     const regexArray = requested.match(picsRegex);
     if (regexArray) {
       [this.requestedFile, this.basename, this.dimensions, this.format] =
@@ -75,7 +83,9 @@ export class ImageRequest {
         const image = sharp(join(sourceFile));
 
         if (width && height) {
-          image.resize(parseInt(width), parseInt(height));
+          image.resize(parseInt(width), parseInt(height), {
+            fit: this.fillMode,
+          });
         }
         if (this.format !== sourceFileExtension) {
           image.toFormat(this.format === "jpg" ? "jpeg" : (this.format as any));
@@ -90,7 +100,7 @@ export class ImageRequest {
           });
       } catch (err: any) {
         log("Could not create Image: " + err.message, res);
-        reject("error");
+        reject("Could not create Image: " + err.message);
       }
     });
   }
@@ -101,7 +111,7 @@ export class ImageRequest {
     } else if (this.files.cache.exists) {
       res && res.sendFile(this.files.cache.path, { root: "." });
     } else {
-      await this.convertImage(res);
+      await this.convertImage(res).catch((err) => console.log(err));
     }
   }
 }

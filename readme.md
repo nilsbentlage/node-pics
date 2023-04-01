@@ -36,7 +36,7 @@ This node server allows to serve image files and convert and resize them on the 
 
 - Put some image-files into the image-directory (you can use subfolders if you want to)
 - Go to localhost:3000/[my-filename]\_[width]x[height].[format] and get your resized image
-- See the .cache-directory, that's where your cached image files live
+- See the .cache-directory, that's where your converted image files live
 
 ### Start the node-server
 
