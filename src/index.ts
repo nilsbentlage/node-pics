@@ -5,7 +5,7 @@ import ImageRequest, { FillMode } from "./classes/ImageRequest";
 import Cache from "./classes/Cache";
 import { log, renderHtmlPage } from "./util";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const PORT = 3000;
 const cacheDirectory = ".cache";

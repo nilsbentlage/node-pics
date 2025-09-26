@@ -10,7 +10,7 @@ export function log(message: string, res?: Response) {
 
 export async function renderHtmlPage(
   readmeContent: string,
-  cache: Cache
+  cache: Cache,
   token?: string,
 ): Promise<string> {
   const htmlContent = marked(readmeContent);
