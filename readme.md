@@ -11,26 +11,72 @@ This node server allows to serve image files and convert and resize them on the 
 
 ## Installation
 
-### Clone the repository
+### Setup
 
 ```bash
-  git clone https://github.com/nilsbentlage/node-pics.git
-  cd node-pics
-  docker build -t node-pics .
+# Clone the repository
+git clone https://github.com/nilsbentlage/node-pics.git
+cd node-pics
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your preferred settings
+
+# Build the Docker image
+docker build -t node-pics .
 ```
 
 ### Run the container
 
+**Basic usage (ephemeral cache):**
+
 ```bash
-  docker run -d -p 3000:3000 --name node-pics --volume ./images:/app/images node-pics
+docker run -d -p 3000:3000 --name node-pics \
+  --volume ./images:/app/images \
+  node-pics
+```
+
+**With persistent cache:**
+
+```bash
+docker run -d -p 3000:3000 --name node-pics \
+  --volume ./images:/app/images \
+  --volume ./cache:/app/.cache \
+  node-pics
+```
+
+**Production example with environment variables:**
+
+```bash
+docker run -d -p 3000:3000 --name node-pics \
+  --volume ./images:/app/images \
+  --volume ./cache:/app/.cache \
+  --env-file .env \
+  node-pics
+```
+
+**Using Docker Compose (recommended):**
+
+```bash
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env file with your settings
+docker-compose up -d
 ```
 
 ### Clear the cache
 
+**Via API (recommended):**
+
 ```bash
-  docker exec node-pics npm run clear
+curl -X DELETE -H "Authorization: Bearer your-secret-token" http://localhost:3000/clearCache
 ```
 
+**Via Docker exec:**
+
+```bash
+docker exec node-pics npm run clear
+```
 
 ## Usage
 
@@ -58,13 +104,13 @@ This node server allows to serve image files and convert and resize them on the 
   GET /[filename]_[width]x[height].[format]?mode=[fillMode]
 ```
 
-| Parameter  | Type             | Description                                                                                   |
-| :--------- | :--------------- | :-------------------------------------------------------------------------------------------- |
-| `filename` | `string`         | **Required**. The path of the requested File, relative to /images, without the file extension |
-| `width`    | `number`         | The new width of the requested Image                                                          |
-| `height`   | `number`         | The new height of the requested Image                                                         |
-| `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image                                      |
-| `mode`     | `cover\|contain\|fill\|inside\|outside` | **Optional**. How the image should be resized to fit the dimensions (default: cover) |
+| Parameter  | Type                                    | Description                                                                                   |
+| :--------- | :-------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| `filename` | `string`                                | **Required**. The path of the requested File, relative to /images, without the file extension |
+| `width`    | `number`                                | The new width of the requested Image                                                          |
+| `height`   | `number`                                | The new height of the requested Image                                                         |
+| `format`   | `jpg\|png\|webp`                        | The (new) format (file extension) of the requested Image                                      |
+| `mode`     | `cover\|contain\|fill\|inside\|outside` | **Optional**. How the image should be resized to fit the dimensions (default: cover)          |
 
 ### Clear the cache
 
@@ -78,6 +124,7 @@ This node server allows to serve image files and convert and resize them on the 
 | `Authorization` | `Bearer <token>` | **Required**. Bearer token to authenticate cache clearing |
 
 **Example:**
+
 ```bash
 curl -X DELETE -H "Authorization: Bearer your-secret-token" http://localhost:3000/clearCache
 ```

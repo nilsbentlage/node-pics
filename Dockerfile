@@ -30,18 +30,19 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Create necessary directories
-RUN mkdir -p images .cache
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Change ownership of app directory
-RUN chown -R nodejs:nodejs /app
+# Create necessary directories with proper ownership
+RUN mkdir -p images .cache && \
+    chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
+
+# Create volume mount points for optional persistence
+VOLUME ["/app/.cache", "/app/images"]
 
 EXPOSE 3000
 

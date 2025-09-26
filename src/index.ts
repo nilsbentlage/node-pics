@@ -4,8 +4,10 @@ import ImageRequest, { FillMode } from "./ImageRequest";
 import clearCache from "./clearCache";
 import fs from "fs";
 
-// Ensure required directories exist
+const PORT = 3000;
+
 const requiredDirs = ["images", ".cache"];
+
 requiredDirs.forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -14,10 +16,6 @@ requiredDirs.forEach((dir) => {
 });
 
 const app = express();
-
-// Note: No body parsing middleware needed since we only use headers and query params
-
-const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 app.get("/favicon.ico", (_req, res) => res.sendStatus(204));
 
@@ -31,19 +29,19 @@ app.get("/health", (_req, res) => {
 
 app.delete("/clearCache", (req, res) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
   if (!token || token !== process.env.CLEAR_CACHE_TOKEN) {
-    return res.status(401).json({ 
-      error: "Unauthorized", 
-      message: "Valid Bearer token required" 
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "Valid Bearer token required",
     });
   }
-  
+
   clearCache();
-  res.json({ 
+  res.json({
     message: "Cache cleared successfully",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -77,6 +75,6 @@ app.get("/:imageName(*)", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  log(`P.I.C.S listening on port ${port}`);
+app.listen(PORT, () => {
+  log(`P.I.C.S listening on port ${PORT}`);
 });
