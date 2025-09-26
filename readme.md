@@ -55,7 +55,7 @@ This node server allows to serve image files and convert and resize them on the 
 ### Get an image
 
 ```http
-  GET /[filename]_[width]x[height].[format]
+  GET /[filename]_[width]x[height].[format]?mode=[fillMode]
 ```
 
 | Parameter  | Type             | Description                                                                                   |
@@ -64,16 +64,23 @@ This node server allows to serve image files and convert and resize them on the 
 | `width`    | `number`         | The new width of the requested Image                                                          |
 | `height`   | `number`         | The new height of the requested Image                                                         |
 | `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image                                      |
+| `mode`     | `cover\|contain\|fill\|inside\|outside` | **Optional**. How the image should be resized to fit the dimensions (default: cover) |
 
 ### Clear the cache
 
 ```http
-  POST /clearCache
+  DELETE /clearCache
 ```
 
-| Parameter | Type     | Description                                |
+**Headers:**
+| Header | Value | Description |
 | :-------- | :------- | :----------------------------------------- |
-| `token`   | `string` | **Required**. The token to clear the cache |
+| `Authorization` | `Bearer <token>` | **Required**. Bearer token to authenticate cache clearing |
+
+**Example:**
+```bash
+curl -X DELETE -H "Authorization: Bearer your-secret-token" http://localhost:3000/clearCache
+```
 
 ### Health Check
 

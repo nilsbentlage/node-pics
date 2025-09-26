@@ -7,6 +7,8 @@ import sharp from "sharp";
 const imageFolder = "images";
 const cacheFolder = ".cache";
 
+export type FillMode = "cover" | "contain" | "fill" | "inside" | "outside";
+
 const picsRegex =
   /^(?<basename>[A-Za-z0-9/\-_][^_]*)(?:_(?<dimensions>\d{1,4}x\d{1,4}))?(?:\.)(?<format>[a-z]{3,4})$/;
 
@@ -17,8 +19,14 @@ class ImageRequest {
   dimensions?: string;
   format!: string;
   files!: { original: any; cache: any; source: any };
+  fillMode: FillMode = "cover";
 
-  constructor(requested: string) {
+  constructor(requested: string, fillMode?: FillMode) {
+    if (fillMode) {
+      this.fillMode = fillMode;
+      fs.mkdirSync(path.join(cacheFolder, fillMode), { recursive: true });
+      requested = path.join(fillMode, requested);
+    }
     const regexArray = requested.match(picsRegex);
     if (regexArray) {
       [this.requestedFile, this.basename, this.dimensions, this.format] =
@@ -51,7 +59,7 @@ class ImageRequest {
   private findSourceFile() {
     try {
       const searchDir = path.join("images", this.filePath || "");
-      
+
       if (!fs.existsSync(searchDir)) {
         return {
           path: null,
@@ -62,7 +70,7 @@ class ImageRequest {
 
       const files = fs.readdirSync(searchDir);
       const foundFile = files.find((file) => file.startsWith(this.basename));
-      
+
       if (foundFile) {
         return {
           path: path.join(imageFolder, this.filePath || "", foundFile),
@@ -70,7 +78,7 @@ class ImageRequest {
           format: foundFile.split(".")[1],
         };
       }
-      
+
       return {
         path: null,
         exists: false,
@@ -87,13 +95,13 @@ class ImageRequest {
 
   processImage(res?: Response) {
     const sourceFile = this.files.source.path;
-    
+
     if (!sourceFile || !this.files.source.exists) {
       const error = "Source file not found";
       log(error, res);
       return Promise.reject(error);
     }
-    
+
     const sourceFileExtension = sourceFile.split(".")[1];
 
     return new Promise((resolve, reject) => {
@@ -104,7 +112,9 @@ class ImageRequest {
         if (this.dimensions) {
           const [width, height] = this.dimensions.split("x");
           if (width && height) {
-            image.resize(parseInt(width), parseInt(height));
+            image.resize(parseInt(width), parseInt(height), {
+              fit: this.fillMode,
+            });
           }
         }
 
@@ -112,7 +122,7 @@ class ImageRequest {
         if (this.format !== sourceFileExtension) {
           image.toFormat(this.format === "jpg" ? "jpeg" : (this.format as any));
         }
-        
+
         image
           .toFile(this.files.cache.path)
           .then(() => {
