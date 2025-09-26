@@ -9,33 +9,33 @@ This node server allows to serve image files and convert and resize them on the 
 - Cache generated file-formats for faster, later use
 - Images will always fill the dimensions in cover mode
 
-## API Reference
-
-#### Get an image
-
-```http
-  GET /${filename}_${width}x${height}.${format}
-```
-
-| Parameter  | Type             | Description                                                                                   |
-| :--------- | :--------------- | :-------------------------------------------------------------------------------------------- |
-| `filename` | `string`         | **Required**. The path of the requested File, relative to /images, without the file extension |
-| `width`    | `number`         | The new width of the requested Image                                                          |
-| `height`   | `number`         | The new height of the requested Image                                                         |
-| `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image                                      |
-
 ## Installation
+
+### Clone the repository
 
 ```bash
   git clone https://github.com/nilsbentlage/node-pics.git
   cd node-pics
-  npm install
+  docker build -t node-pics .
 ```
+
+### Run the container
+
+```bash
+  docker run -d -p 3000:3000 --name node-pics --volume ./images:/app/images node-pics
+```
+
+### Clear the cache
+
+```bash
+  docker exec node-pics npm run clear
+```
+
 
 ## Usage
 
 - Put some image-files into the image-directory (you can use subfolders if you want to)
-- Go to localhost:3000/[my-filename]\_[width]x[height].[format] and get your resized image
+- Go to [YOUR_HOST]:[YOUR_PORT]/[my-filename]\_[width]x[height].[format] and get your resized image
 - See the .cache-directory, that's where your cached image files live
 
 ### Start the node-server
@@ -48,4 +48,35 @@ This node server allows to serve image files and convert and resize them on the 
 
 ```bash
   npm run clear
+```
+
+## API Reference
+
+### Get an image
+
+```http
+  GET /[filename]_[width]x[height].[format]
+```
+
+| Parameter  | Type             | Description                                                                                   |
+| :--------- | :--------------- | :-------------------------------------------------------------------------------------------- |
+| `filename` | `string`         | **Required**. The path of the requested File, relative to /images, without the file extension |
+| `width`    | `number`         | The new width of the requested Image                                                          |
+| `height`   | `number`         | The new height of the requested Image                                                         |
+| `format`   | `jpg\|png\|webp` | The (new) format (file extension) of the requested Image                                      |
+
+### Clear the cache
+
+```http
+  POST /clearCache
+```
+
+| Parameter | Type     | Description                                |
+| :-------- | :------- | :----------------------------------------- |
+| `token`   | `string` | **Required**. The token to clear the cache |
+
+### Health Check
+
+```http
+  GET /health
 ```

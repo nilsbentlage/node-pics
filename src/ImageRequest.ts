@@ -8,13 +8,13 @@ const imageFolder = "images";
 const cacheFolder = ".cache";
 
 const picsRegex =
-  /(?<basename>[A-z/\-][^_]*)(?:_)?(?<dimensions>\d{1,4}x\d{1,4})?(?:\.)(?<format>[a-z]{1,4})/;
+  /^(?<basename>[A-Za-z0-9/\-_][^_]*)(?:_(?<dimensions>\d{1,4}x\d{1,4}))?(?:\.)(?<format>[a-z]{3,4})$/;
 
 class ImageRequest {
   requestedFile!: string;
   basename!: string;
   filePath?: string;
-  dimensions: string;
+  dimensions?: string;
   format!: string;
   files!: { original: any; cache: any; source: any };
 
@@ -24,10 +24,9 @@ class ImageRequest {
       [this.requestedFile, this.basename, this.dimensions, this.format] =
         regexArray || new Array(4).fill(null);
       if (this.basename.includes("/")) {
-        this.basename = this.basename.split("/").pop() || this.basename;
-        this.filePath = this.basename
-          .split("/", this.basename.split("/").length - 1)
-          .join("/");
+        const pathParts = this.basename.split("/");
+        this.filePath = pathParts.slice(0, -1).join("/");
+        this.basename = pathParts[pathParts.length - 1];
       }
       this.files = {
         original: {
@@ -40,23 +39,7 @@ class ImageRequest {
           exists: fs.existsSync(path.join(cacheFolder, this.requestedFile)),
           format: this.format,
         },
-        source: {
-          path:
-            imageFolder +
-            "/" +
-            fs
-              .readdirSync(path.join("images", this.filePath || ""))
-              .find((foundFile) => foundFile.startsWith(this.basename)),
-          exists: fs
-            .readdirSync(path.join("images", this.filePath || ""))
-            .find((foundFile) => foundFile.startsWith(this.basename))
-            ? true
-            : false,
-          format: fs
-            .readdirSync(path.join("images", this.filePath || ""))
-            .find((foundFile) => foundFile.startsWith(this.basename))
-            ?.split(".")[1],
-        },
+        source: this.findSourceFile(),
       };
     } else {
       throw new Error(
@@ -65,21 +48,71 @@ class ImageRequest {
     }
   }
 
-  convertImage(res?: Response) {
+  private findSourceFile() {
+    try {
+      const searchDir = path.join("images", this.filePath || "");
+      
+      if (!fs.existsSync(searchDir)) {
+        return {
+          path: null,
+          exists: false,
+          format: null,
+        };
+      }
+
+      const files = fs.readdirSync(searchDir);
+      const foundFile = files.find((file) => file.startsWith(this.basename));
+      
+      if (foundFile) {
+        return {
+          path: path.join(imageFolder, this.filePath || "", foundFile),
+          exists: true,
+          format: foundFile.split(".")[1],
+        };
+      }
+      
+      return {
+        path: null,
+        exists: false,
+        format: null,
+      };
+    } catch (error) {
+      return {
+        path: null,
+        exists: false,
+        format: null,
+      };
+    }
+  }
+
+  processImage(res?: Response) {
     const sourceFile = this.files.source.path;
+    
+    if (!sourceFile || !this.files.source.exists) {
+      const error = "Source file not found";
+      log(error, res);
+      return Promise.reject(error);
+    }
+    
     const sourceFileExtension = sourceFile.split(".")[1];
-    const [width, height] = this.dimensions.split("x");
 
     return new Promise((resolve, reject) => {
       try {
         const image = sharp(join(sourceFile));
 
-        if (width && height) {
-          image.resize(parseInt(width), parseInt(height));
+        // Apply resizing if dimensions are specified
+        if (this.dimensions) {
+          const [width, height] = this.dimensions.split("x");
+          if (width && height) {
+            image.resize(parseInt(width), parseInt(height));
+          }
         }
+
+        // Apply format conversion if needed
         if (this.format !== sourceFileExtension) {
           image.toFormat(this.format === "jpg" ? "jpeg" : (this.format as any));
         }
+        
         image
           .toFile(this.files.cache.path)
           .then(() => {
@@ -87,9 +120,13 @@ class ImageRequest {
           })
           .then(() => {
             resolve("done");
+          })
+          .catch((err) => {
+            log("Could not save processed image: " + err.message, res);
+            reject("error");
           });
       } catch (err: any) {
-        log("Could not create Image: " + err.message, res);
+        log("Could not process image: " + err.message, res);
         reject("error");
       }
     });
@@ -101,7 +138,7 @@ class ImageRequest {
     } else if (this.files.cache.exists) {
       res && res.sendFile(this.files.cache.path, { root: "." });
     } else {
-      await this.convertImage(res);
+      await this.processImage(res);
     }
   }
 }
