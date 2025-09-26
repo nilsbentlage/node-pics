@@ -1,33 +1,33 @@
-import express from "express";
-import log from "./util";
-import ImageRequest, { FillMode } from "./ImageRequest";
-import clearCache from "./clearCache";
 import fs from "fs";
+import path from "path";
+import express from "express";
+import ImageRequest, { FillMode } from "./classes/ImageRequest";
+import Cache from "./classes/Cache";
+import { log, renderHtmlPage } from "./util";
+import dotenv from "dotenv";
+dotenv.config();
 
 const PORT = 3000;
+const cacheDirectory = ".cache";
 
-const requiredDirs = ["images", ".cache"];
-
-requiredDirs.forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    log(`Created directory: ${dir}`);
-  }
-});
+const cache = new Cache(cacheDirectory);
 
 const app = express();
 
 app.get("/favicon.ico", (_req, res) => res.sendStatus(204));
 
 app.get("/health", (_req, res) => {
+  const healthData = cache.getHealth();
   res.json({
     status: "healthy",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: healthData.uptime,
+    filesInCache: healthData.filesInCache,
+    cacheSize: healthData.cacheSize,
   });
 });
 
-app.delete("/clearCache", (req, res) => {
+app.delete("/clear", (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -38,7 +38,7 @@ app.delete("/clearCache", (req, res) => {
     });
   }
 
-  clearCache();
+  cache.clear();
   res.json({
     message: "Cache cleared successfully",
     timestamp: new Date().toISOString(),
@@ -48,6 +48,28 @@ app.delete("/clearCache", (req, res) => {
 app.get("/:imageName(*)", async (req, res) => {
   const begin = Date.now();
   const imageName = req.params.imageName;
+
+  if (!imageName) {
+    try {
+      const readmePath = path.join(__dirname, "..", "readme.md");
+      const readmeContent = fs.readFileSync(readmePath, "utf8");
+      const htmlPage = await renderHtmlPage(
+        readmeContent,
+        cache,
+        process.env.EMBED_TOKEN === "true"
+          ? process.env.CLEAR_CACHE_TOKEN
+          : undefined
+      );
+      res.setHeader("Content-Type", "text/html");
+      res.send(htmlPage);
+    } catch (error: any) {
+      log(`Error serving help page: ${error.message}`);
+      res.status(500).json({
+        error: "Could not load help documentation",
+        message: error.message,
+      });
+    }
+  }
 
   // Validate fillMode parameter
   const validFillModes: FillMode[] = [
@@ -62,7 +84,7 @@ app.get("/:imageName(*)", async (req, res) => {
     fillMode && validFillModes.includes(fillMode) ? fillMode : undefined;
 
   try {
-    const request = new ImageRequest(imageName, validatedFillMode);
+    const request = new ImageRequest(cache, imageName, validatedFillMode);
     await request.serveImage(res);
 
     const end = Date.now();

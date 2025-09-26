@@ -1,11 +1,11 @@
-import log from "./util";
+import { log } from "../util";
 import { Response } from "express";
 import fs from "fs";
 import path, { join } from "path";
 import sharp from "sharp";
+import Cache from "./Cache";
 
 const imageFolder = "images";
-const cacheFolder = ".cache";
 
 export type FillMode = "cover" | "contain" | "fill" | "inside" | "outside";
 
@@ -21,10 +21,12 @@ class ImageRequest {
   files!: { original: any; cache: any; source: any };
   fillMode: FillMode = "cover";
 
-  constructor(requested: string, fillMode?: FillMode) {
+  constructor(cache: Cache, requested: string, fillMode?: FillMode) {
     if (fillMode) {
       this.fillMode = fillMode;
-      fs.mkdirSync(path.join(cacheFolder, fillMode), { recursive: true });
+      fs.mkdirSync(path.join(cache.getDirectory(), fillMode), {
+        recursive: true,
+      });
       requested = path.join(fillMode, requested);
     }
     const regexArray = requested.match(picsRegex);
@@ -43,16 +45,16 @@ class ImageRequest {
           format: this.format,
         },
         cache: {
-          path: path.join(cacheFolder, this.requestedFile),
-          exists: fs.existsSync(path.join(cacheFolder, this.requestedFile)),
+          path: path.join(cache.getDirectory(), this.requestedFile),
+          exists: fs.existsSync(
+            path.join(cache.getDirectory(), this.requestedFile)
+          ),
           format: this.format,
         },
         source: this.findSourceFile(),
       };
     } else {
-      throw new Error(
-        "The requested requestedFile does not meet our Requirements"
-      );
+      throw new Error("The requested Path does not meet our Requirements");
     }
   }
 

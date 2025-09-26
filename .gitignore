@@ -1,6 +1,7 @@
 node_modules
 dist/*
 images/*
+!images/cat.jpg
 .cache/
 .vscode
 .env

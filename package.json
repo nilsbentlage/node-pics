@@ -6,22 +6,23 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
-    "dev:ImageRequest": "concurrently \"npx tsc --watch\" \"nodemon -q dist/ImageRequest.js\"",
-    "clear": "node dist/clearCache.js"
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\""
   },
   "author": "Nils Bentlage",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^17.2.2",
     "express": "^4.18.2",
-    "sharp": "^0.31.3"
+    "marked": "^9.1.6",
+    "sharp": "^0.34.4"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
+    "@types/marked": "^6.0.0",
     "@types/node": "^18.15.3",
     "@types/sharp": "^0.31.1",
     "concurrently": "^7.6.0",
-    "nodemon": "^2.0.21",
+    "nodemon": "^3.1.10",
     "typescript": "^5.0.2"
   }
 }

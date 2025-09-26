@@ -4,7 +4,7 @@ services:
   node-pics:
     build: .
     ports:
-      - "${PORT:-3000}:3000"
+      - "${EXTERNAL_PORT:-3000}:3000"
     volumes:
       # Mount your images directory
       - ./images:/app/images
