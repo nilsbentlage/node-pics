@@ -10,7 +10,7 @@ const cacheFolder = ".cache";
 const picsRegex =
   /(?<basename>[A-z/\-][^_]*)(?:_)?(?<dimensions>\d{1,4}x\d{1,4})?(?:\.)(?<format>[a-z]{1,4})/;
 
-export class ImageRequest {
+class ImageRequest {
   requestedFile!: string;
   basename!: string;
   filePath?: string;
@@ -105,3 +105,5 @@ export class ImageRequest {
     }
   }
 }
+
+export default ImageRequest;

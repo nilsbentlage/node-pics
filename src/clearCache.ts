@@ -4,15 +4,17 @@ import log from "./util";
 
 const directory = ".cache";
 
-fs.readdir(directory, (err, files) => {
-  if (err) throw err;
+export default function clearCache() {
+  fs.readdir(directory, (err, files) => {
+    if (err) throw err;
 
-  for (const file of files) {
-    if (!file.endsWith(".gitkeep")) {
-      fs.unlink(path.join(directory, file), (err) => {
-        if (err) throw err;
-      });
+    for (const file of files) {
+      if (!file.endsWith(".gitkeep")) {
+        fs.unlink(path.join(directory, file), (err) => {
+          if (err) throw err;
+        });
+      }
     }
-  }
-  log(`Deleted ${files.length - 1} File(s)`);
-});
+    log(`Deleted ${files.length - 1} File(s)`);
+  });
+}
